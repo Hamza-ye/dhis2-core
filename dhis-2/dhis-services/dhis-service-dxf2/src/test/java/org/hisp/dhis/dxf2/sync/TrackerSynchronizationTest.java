@@ -28,6 +28,8 @@ package org.hisp.dhis.dxf2.sync;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.List;
 
 import org.hibernate.Session;
@@ -36,7 +38,7 @@ import org.hisp.dhis.DhisSpringTest;
 import org.hisp.dhis.common.IdentifiableObjectManager;
 import org.hisp.dhis.dbms.DbmsManager;
 import org.hisp.dhis.dxf2.events.TrackedEntityInstanceParams;
-import org.hisp.dhis.dxf2.events.TrackerAccessManager;
+import org.hisp.dhis.dxf2.events.aggregates.TrackedEntityInstanceAggregate;
 import org.hisp.dhis.dxf2.events.enrollment.EnrollmentService;
 import org.hisp.dhis.dxf2.events.trackedentity.JacksonTrackedEntityInstanceService;
 import org.hisp.dhis.dxf2.events.trackedentity.TrackedEntityInstanceService;
@@ -49,7 +51,17 @@ import org.hisp.dhis.relationship.RelationshipService;
 import org.hisp.dhis.reservedvalue.ReservedValueService;
 import org.hisp.dhis.schema.SchemaService;
 import org.hisp.dhis.system.notification.Notifier;
-import org.hisp.dhis.trackedentity.*;
+import org.hisp.dhis.trackedentity.TrackedEntityAttribute;
+import org.hisp.dhis.trackedentity.TrackedEntityAttributeService;
+import org.hisp.dhis.trackedentity.TrackedEntityAttributeStore;
+import org.hisp.dhis.trackedentity.TrackedEntityInstance;
+import org.hisp.dhis.trackedentity.TrackedEntityInstanceAuditService;
+import org.hisp.dhis.trackedentity.TrackedEntityInstanceQueryParams;
+import org.hisp.dhis.trackedentity.TrackedEntityType;
+import org.hisp.dhis.trackedentity.TrackedEntityTypeAttribute;
+import org.hisp.dhis.trackedentity.TrackedEntityTypeService;
+import org.hisp.dhis.trackedentity.TrackerAccessManager;
+import org.hisp.dhis.trackedentity.TrackerOwnershipManager;
 import org.hisp.dhis.trackedentityattributevalue.TrackedEntityAttributeValue;
 import org.hisp.dhis.trackedentityattributevalue.TrackedEntityAttributeValueService;
 import org.hisp.dhis.user.CurrentUserService;
@@ -57,8 +69,9 @@ import org.hisp.dhis.user.User;
 import org.hisp.dhis.user.UserService;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author David Katuscak (katuscak.d@gmail.com)
@@ -115,13 +128,33 @@ public class TrackerSynchronizationTest extends DhisSpringTest
 
     @Autowired
     private TrackerOwnershipManager trackerOwnershipAccessManager;
+    
+    @Autowired
+    private TrackedEntityInstanceAuditService trackedEntityInstanceAuditService;
+    
+    @Autowired
+    private TrackedEntityTypeService trackedEntityTypeService;
 
     @Autowired
     private Notifier notifier;
 
+    @Autowired
+    private ObjectMapper jsonMapper;
+
+    @Autowired
+    private TrackedEntityInstanceAggregate trackedEntityInstanceAggregate;
+    
+    @Autowired
+    private TrackedEntityAttributeStore trackedEntityAttributeStore;
+    
+    @Autowired
+    @Qualifier( "xmlMapper" )
+    private ObjectMapper xmlMapper;
+
     private TrackedEntityInstanceService subject;
 
     private TrackedEntityInstanceQueryParams queryParams;
+
     private TrackedEntityInstanceParams params;
 
     private Session currentSession;
@@ -171,10 +204,11 @@ public class TrackerSynchronizationTest extends DhisSpringTest
 
         CurrentUserService currentUserService = new MockCurrentUserService( user );
 
-        subject = new JacksonTrackedEntityInstanceService( teiService, trackedEntityAttributeService,
-            _relationshipService, relationshipService, trackedEntityAttributeValueService, manager, _userService,
-            dbmsManager, enrollmentService, programInstanceService, currentUserService, schemaService, queryService,
-            reservedValueService, trackerAccessManager, fileResourceService, trackerOwnershipAccessManager, notifier );
+        subject = new JacksonTrackedEntityInstanceService( teiService, trackedEntityAttributeService, _relationshipService, relationshipService,
+            trackedEntityAttributeValueService, manager, _userService, dbmsManager, enrollmentService, programInstanceService, currentUserService,
+            schemaService, queryService, reservedValueService, trackerAccessManager, fileResourceService, trackerOwnershipAccessManager,
+            trackedEntityInstanceAggregate, trackedEntityAttributeStore, trackedEntityInstanceAuditService, trackedEntityTypeService, notifier, jsonMapper,
+            xmlMapper );
 
         prepareSyncParams();
         prepareDataForTest();
@@ -197,6 +231,6 @@ public class TrackerSynchronizationTest extends DhisSpringTest
         List<org.hisp.dhis.dxf2.events.trackedentity.TrackedEntityInstance> fetchedTeis =
             subject.getTrackedEntityInstances( queryParams, params, true );
 
-        assertEquals( 1, fetchedTeis.get(0).getAttributes().size() );
+        assertEquals( 1, fetchedTeis.get( 0 ).getAttributes().size() );
     }
 }

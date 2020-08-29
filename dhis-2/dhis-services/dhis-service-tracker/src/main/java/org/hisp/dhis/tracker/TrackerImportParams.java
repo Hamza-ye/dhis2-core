@@ -108,6 +108,18 @@ public class TrackerImportParams
     private ValidationMode validationMode = ValidationMode.FULL;
 
     /**
+     * Should text pattern validation be skipped or not, default is not.
+     */
+    @JsonProperty
+    private boolean skipPatternValidation;
+
+    /**
+     * Should side effects be skipped or not, default is not.
+     */
+    @JsonProperty
+    private boolean skipSideEffects;
+
+    /**
      * Name of file that was used for import (if available).
      */
     @JsonProperty
@@ -182,6 +194,8 @@ public class TrackerImportParams
             .user( user )
             .importMode( importMode )
             .importStrategy( importStrategy )
+            .skipTextPatternValidation( skipPatternValidation )
+            .skipSideEffects( skipSideEffects )
             .identifiers( identifiers )
             .atomicMode( atomicMode )
             .flushMode( flushMode )

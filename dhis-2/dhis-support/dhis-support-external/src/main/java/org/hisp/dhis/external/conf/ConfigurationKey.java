@@ -69,7 +69,6 @@ public enum ConfigurationKey
     CLUSTER_MEMBERS( "cluster.members", "", false ),
     CLUSTER_CACHE_PORT( "cluster.cache.port", "4001", false ),
     CLUSTER_CACHE_REMOTE_OBJECT_PORT( "cluster.cache.remote.object.port", "0", false ),
-    METADATA_AUDIT_LOG( "metadata.audit.log", "off", false ),
     REDIS_HOST( "redis.host", "localhost", false ),
     REDIS_PORT( "redis.port", "6379", false ),
     REDIS_PASSWORD( "redis.password", "", true ),
@@ -81,7 +80,7 @@ public enum ConfigurationKey
     ANALYTICS_CACHE_EXPIRATION( "analytics.cache.expiration", "0" ),
     ARTEMIS_MODE( "artemis.mode", "EMBEDDED" ),
     ARTEMIS_HOST( "artemis.host", "127.0.0.1" ),
-    ARTEMIS_PORT( "artemis.port", "15672" ),
+    ARTEMIS_PORT( "artemis.port", "25672" ),
     ARTEMIS_USERNAME( "artemis.username", "guest", true ),
     ARTEMIS_PASSWORD( "artemis.password", "guest", true ),
     ARTEMIS_EMBEDDED_SECURITY( "artemis.embedded.security", "false" ),
@@ -102,10 +101,21 @@ public enum ConfigurationKey
     MONITORING_LOG_REQUESTID_MAXSIZE( "monitoring.requestidlog.maxsize", "-1", false ),
     APPHUB_BASE_URL( "apphub.base.url", "https://apps.dhis2.org", false ),
     APPHUB_API_URL( "apphub.api.url", "https://apps.dhis2.org/api", false ),
-    AUDIT_USE_INMEMORY_QUEUE_ENABLED( "audit.inmemory-queue.enabled", "on" ),
+    CHANGELOG_AGGREGATE( "changelog.aggregate", "on" ),
+    CHANGELOG_TRACKER( "changelog.tracker", "on" ),
+    AUDIT_USE_INMEMORY_QUEUE_ENABLED( "audit.inmemory-queue.enabled", "off" ),
+    AUDIT_LOGGER( "audit.logger", "off", false ),
+    AUDIT_DATABASE( "audit.database", "on", false ),
     AUDIT_METADATA_MATRIX( "audit.metadata", "", false ),
     AUDIT_TRACKER_MATRIX( "audit.tracker", "", false ),
-    AUDIT_AGGREGATE_MATRIX( "audit.aggregate", "", false );
+    AUDIT_AGGREGATE_MATRIX( "audit.aggregate", "", false ),
+
+    OIDC_OAUTH2_LOGIN_ENABLED( "oidc.oauth2.login.enabled", "off", false ),
+
+    OIDC_PROVIDER_GOOGLE_CLIENT_ID( "oidc.provider.google.client_id", "empty", true ),
+    OIDC_PROVIDER_GOOGLE_CLIENT_SECRET( "oidc.provider.google.client_secret", "empty", true ),
+    OIDC_PROVIDER_GOOGLE_REDIR_BASE_URL( "oidc.provider.google.redir_baseurl", "http://localhost:8080", true ),
+    OIDC_PROVIDER_GOOGLE_MAPPING_CLAIM( "oidc.provider.google.mapping_claim", "email", true );
 
     private final String key;
 

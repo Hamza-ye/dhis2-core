@@ -31,13 +31,13 @@ package org.hisp.dhis.tracker.converter;
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.relationship.RelationshipType;
 import org.hisp.dhis.tracker.TrackerIdScheme;
-import org.hisp.dhis.tracker.TrackerIdentifier;
 import org.hisp.dhis.tracker.domain.Relationship;
 import org.hisp.dhis.tracker.domain.RelationshipItem;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.preheat.TrackerPreheatParams;
 import org.hisp.dhis.tracker.preheat.TrackerPreheatService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,12 +56,6 @@ import static org.hisp.dhis.relationship.RelationshipEntity.TRACKED_ENTITY_INSTA
 public class RelationshipTrackerConverterService
     implements TrackerConverterService<Relationship, org.hisp.dhis.relationship.Relationship>
 {
-    private final TrackerPreheatService trackerPreheatService;
-
-    public RelationshipTrackerConverterService( TrackerPreheatService trackerPreheatService )
-    {
-        this.trackerPreheatService = trackerPreheatService;
-    }
 
     @Override
     public Relationship to( org.hisp.dhis.relationship.Relationship relationship )
@@ -84,11 +78,10 @@ public class RelationshipTrackerConverterService
             Relationship toRelationship = new Relationship();
             toRelationship.setRelationship( fromRelationship.getUid() );
             toRelationship.setBidirectional( fromRelationship.getRelationshipType().isBidirectional() );
-            toRelationship.setCreated( fromRelationship.getCreated().toString() );
+            toRelationship.setCreatedAt( fromRelationship.getCreated().toString() );
             toRelationship.setFrom( convertRelationshipType( fromRelationship.getFrom() ) );
             toRelationship.setTo( convertRelationshipType( fromRelationship.getTo() ) );
-            toRelationship.setLastUpdated( fromRelationship.getLastUpdated().toString() );
-            toRelationship.setRelationshipName( fromRelationship.getName() );
+            toRelationship.setUpdatedAt( fromRelationship.getLastUpdated().toString() );
             toRelationship.setRelationshipType( fromRelationship.getRelationshipType().getUid() );
 
             return toRelationship;
@@ -108,22 +101,10 @@ public class RelationshipTrackerConverterService
     }
 
     @Override
-    public org.hisp.dhis.relationship.Relationship from( Relationship relationship )
-    {
-        List<org.hisp.dhis.relationship.Relationship> relationships = from( Collections.singletonList( relationship ) );
-
-        if ( relationships.isEmpty() )
-        {
-            return null;
-        }
-
-        return relationships.get( 0 );
-    }
-
-    @Override
     public org.hisp.dhis.relationship.Relationship from( TrackerPreheat preheat, Relationship relationship )
     {
-        List<org.hisp.dhis.relationship.Relationship> relationships = from( preheat, Collections.singletonList( relationship ) );
+        List<org.hisp.dhis.relationship.Relationship> relationships = from( preheat,
+            Collections.singletonList( relationship ) );
 
         if ( relationships.isEmpty() )
         {
@@ -134,19 +115,14 @@ public class RelationshipTrackerConverterService
     }
 
     @Override
-    public List<org.hisp.dhis.relationship.Relationship> from( List<Relationship> relationships )
-    {
-        return from( preheat( relationships ), relationships );
-    }
-
-    @Override
-    public List<org.hisp.dhis.relationship.Relationship> from( TrackerPreheat preheat, List<Relationship> fromRelationships )
+    public List<org.hisp.dhis.relationship.Relationship> from( TrackerPreheat preheat,
+        List<Relationship> fromRelationships )
     {
         List<org.hisp.dhis.relationship.Relationship> toRelationships = new ArrayList<>();
 
         fromRelationships.forEach( fromRelationship -> {
             org.hisp.dhis.relationship.Relationship toRelationship = preheat
-                .getRelationship( TrackerIdentifier.UID, fromRelationship.getRelationship() );
+                .getRelationship( TrackerIdScheme.UID, fromRelationship.getRelationship() );
             org.hisp.dhis.relationship.RelationshipType relationshipType = preheat
                 .get( TrackerIdScheme.UID, RelationshipType.class, fromRelationship.getRelationshipType() );
             org.hisp.dhis.relationship.RelationshipItem fromItem = new org.hisp.dhis.relationship.RelationshipItem();
@@ -166,7 +142,6 @@ public class RelationshipTrackerConverterService
                 toRelationship.setUid( CodeGenerator.generateUid() );
             }
 
-            toRelationship.setName( fromRelationship.getRelationshipName() );
             toRelationship.setRelationshipType( relationshipType );
 
             if ( fromRelationship.getRelationship() != null )
@@ -215,11 +190,5 @@ public class RelationshipTrackerConverterService
         } );
 
         return toRelationships;
-    }
-
-    private TrackerPreheat preheat( List<Relationship> relationships )
-    {
-        TrackerPreheatParams params = TrackerPreheatParams.builder().relationships( relationships ).build();
-        return trackerPreheatService.preheat( params );
     }
 }
