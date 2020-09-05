@@ -33,7 +33,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.hisp.dhis.external.conf.ConfigurationKey;
 import org.hisp.dhis.external.conf.DhisConfigurationProvider;
+import org.hisp.dhis.i18n.I18nManager;
 import org.hisp.dhis.security.MappedRedirectStrategy;
+import org.hisp.dhis.security.spring2fa.TwoFactorWebAuthenticationDetailsSource;
 import org.hisp.dhis.security.vote.ActionAccessVoter;
 import org.hisp.dhis.security.vote.ExternalAccessVoter;
 import org.hisp.dhis.security.vote.LogicalOrAccessDecisionManager;
@@ -114,6 +116,12 @@ public class DhisWebCommonsWebSecurityConfig
     public static class FormLoginWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter
     {
         @Autowired
+        private TwoFactorWebAuthenticationDetailsSource twoFactorWebAuthenticationDetailsSource;
+
+        @Autowired
+        private I18nManager i18nManager;
+
+        @Autowired
         private DhisConfigurationProvider configurationProvider;
 
         @Autowired
@@ -131,8 +139,6 @@ public class DhisWebCommonsWebSecurityConfig
                 .antMatchers( "/dhis-web-commons/flags/**" )
                 .antMatchers( "/dhis-web-commons/fonts/**" )
                 .antMatchers( "/dhis-web-commons/i18nJavaScript.action" )
-                .antMatchers( "/dhis-web-commons/security/**" )
-
                 .antMatchers( "/api/files/style/external" )
                 .antMatchers( "/external-static/**" )
                 .antMatchers( "/favicon.ico" );
@@ -149,6 +155,7 @@ public class DhisWebCommonsWebSecurityConfig
 
                 .requestMatchers( analyticsPluginResources() ).permitAll()
 
+                .antMatchers( "/dhis-web-commons/security/*" ).permitAll()
                 .antMatchers( "/oauth2/**" ).permitAll()
                 .antMatchers( "/dhis-web-dashboard/**" ).hasAnyAuthority( "ALL", "M_dhis-web-dashboard" )
                 .antMatchers( "/dhis-web-pivot/**" ).hasAnyAuthority( "ALL", "M_dhis-web-pivot" )
@@ -178,24 +185,25 @@ public class DhisWebCommonsWebSecurityConfig
                 .and()
 
                 .formLogin()
-
-                .failureHandler( authenticationFailureHandler() )
-                .successHandler( authenticationSuccessHandler() )
-
-                .loginPage( "/dhis-web-commons/security/login.action" ).permitAll()
+                .authenticationDetailsSource( twoFactorWebAuthenticationDetailsSource )
+                .loginPage( "/dhis-web-commons/security/login.action" )
                 .usernameParameter( "j_username" ).passwordParameter( "j_password" )
                 .loginProcessingUrl( "/dhis-web-commons-security/login.action" )
-                .failureUrl( "/dhis-web-commons/security/login.action" )
+                .failureHandler( authenticationFailureHandler() )
+                .successHandler( authenticationSuccessHandler() )
+                .permitAll()
                 .and()
 
                 .logout()
                 .logoutUrl( "/dhis-web-commons-security/logout.action" )
                 .logoutSuccessUrl( "/" )
                 .deleteCookies( "JSESSIONID" )
+                .permitAll()
                 .and()
 
                 .exceptionHandling()
                 .authenticationEntryPoint( entryPoint() )
+
                 .and()
 
                 .csrf()
@@ -242,7 +250,7 @@ public class DhisWebCommonsWebSecurityConfig
         public CustomExceptionMappingAuthenticationFailureHandler authenticationFailureHandler()
         {
             CustomExceptionMappingAuthenticationFailureHandler handler =
-                new CustomExceptionMappingAuthenticationFailureHandler();
+                new CustomExceptionMappingAuthenticationFailureHandler( i18nManager );
 
             // Handles the special case when a user failed to login because it has expired...
             handler.setExceptionMappings(
@@ -316,7 +324,7 @@ public class DhisWebCommonsWebSecurityConfig
             return voter;
         }
 
-        @Bean
+        @Bean( "accessDecisionManager" )
         public LogicalOrAccessDecisionManager accessDecisionManager()
         {
             List<AccessDecisionManager> decisionVoters = Arrays.asList(
